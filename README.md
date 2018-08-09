@@ -16,12 +16,16 @@ Specifically, meant to show a problem I am facing.
 ## Running Tests through ScalaTest cli
 1. `cd docker` (The compiled jars are copied to this folder, where we already have the scalatest jars)
 2. Running individual tests: 
-    `scala -J-Xmx2g -cp "scalatest_2.11-3.0.5.jar:scalactic_2.11-3.0.5.jar" org.scalatest.tools.Runner -o -R try-scalatest-1.0-SNAPSHOT-test.jar -s com.tfs.test.MyTest1`
+    `scala -J-Xmx2g -cp "scalatest_2.11-3.0.5.jar:scalactic_2.11-3.0.5.jar" org.scalatest.tools.Runner -o -R try-scalatest-1.0-SNAPSHOT-test.jar -s com.tfs.test.MyTest1` 
+    
     `scala -J-Xmx2g -cp "scalatest_2.11-3.0.5.jar:scalactic_2.11-3.0.5.jar" org.scalatest.tools.Runner -o -R try-scalatest-1.0-SNAPSHOT-test.jar -s com.tfs.test.MyTest2`
+    
 3. Running all tests together:
     `scala -J-Xmx2g -cp "scalatest_2.11-3.0.5.jar:scalactic_2.11-3.0.5.jar" org.scalatest.tools.Runner -o -R try-scalatest-1.0-SNAPSHOT-test.jar`
+    
     This is currently failing with the following message:
-    `Discovery starting.
+    <pre>
+    Discovery starting.
     *** RUN ABORTED ***
       java.lang.IllegalAccessError: class org.xml.sax.helpers.SecuritySupport12 cannot access its superclass org.xml.sax.helpers.SecuritySupport
       at java.lang.ClassLoader.defineClass1(Native Method)
@@ -33,5 +37,6 @@ Specifically, meant to show a problem I am facing.
       at java.net.URLClassLoader$1.run(URLClassLoader.java:362)
       at java.security.AccessController.doPrivileged(Native Method)
       at java.net.URLClassLoader.findClass(URLClassLoader.java:361)
-      at java.lang.ClassLoader.loadClass(ClassLoader.java:424)`
+      at java.lang.ClassLoader.loadClass(ClassLoader.java:424)
+    </pre>
   
