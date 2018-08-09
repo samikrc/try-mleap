@@ -1,0 +1,5 @@
+Each specified suite class must be public, a subclass of org.scalatest.Suite, and contain a public no-arg constructor. Suite classes must be specified with fully qualified names. The specified Suite classes may be loaded from the classpath. If a runpath is specified with the -R option, specified Suite classes may also be loaded from the runpath. All specified Suite classes will be loaded and instantiated via their no-arg constructor.
+
+The runner will invoke execute on each instantiated org.scalatest.Suite, passing in the dispatch reporter to each execute method.
+
+Runner is intended to be used from the command line. It is included in org.scalatest package as a convenience for the user. If this package is incorporated into tools, such as IDEs, which take over the role of runner, object org.scalatest.tools.Runner may be excluded from that implementation of the package. All other public types declared in package org.scalatest.tools.Runner should be included in any such usage, however, so client software can count on them being available.
