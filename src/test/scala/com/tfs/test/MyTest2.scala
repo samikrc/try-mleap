@@ -7,11 +7,9 @@ import com.typesafe.config.{ConfigFactory, Config => TSConfig}
 
 import scala.io.Source
 import org.apache.spark.sql.SparkSession
-import com.tfs.test.SparkWordCounter
 
 class MyTest2 extends FlatSpec
 {
-
     val config: TSConfig = ConfigFactory.load()
 
     private val log = LoggerFactory.getLogger(getClass)
@@ -25,7 +23,7 @@ class MyTest2 extends FlatSpec
             .appName("WordCount2")
             .config("spark.master", "local")
             .getOrCreate()
-    val fileStream = MyTest2.this.getClass.getResourceAsStream("/input2.txt")
+    val fileStream = getClass.getResourceAsStream("/input2.txt")
     val counts = SparkWordCounter.countWords(ss.sparkContext, Source.fromInputStream(fileStream).getLines().toList)
 
     "Count of words" should "match" in

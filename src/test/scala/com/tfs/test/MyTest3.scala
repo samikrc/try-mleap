@@ -8,34 +8,24 @@ import com.typesafe.config.{ConfigFactory, Config => TSConfig}
 import scala.io.Source
 import org.apache.spark.sql.SparkSession
 
-class MyTest1 extends FlatSpec
+class MyTest3 extends FlatSpec
 {
-
     val config: TSConfig = ConfigFactory.load()
 
     private val log = LoggerFactory.getLogger(getClass)
     Logger.getLogger("org").setLevel(Level.OFF)
 
     println("=============================================================================================")
-    println("Test case: Word count with file: input1.txt")
+    println("Test case: Word count with file: input3.txt")
 
     val ss = SparkSession
             .builder()
-            .appName("WordCount1")
+            .appName("WordCount3")
             .config("spark.master", "local")
             .getOrCreate()
-    val fileStream = MyTest1.this.getClass.getResourceAsStream("/input1.txt")
-    val input = ss.sparkContext.makeRDD(Source.fromInputStream(fileStream).getLines().toList)
-    val counts = input.flatMap(line ⇒ line.split(" "))
-            .map(word ⇒ (word, 1))
-            .reduceByKey(_ + _)
-            .collect()
-            .toMap
+    val df = ss.read.json(getClass.getResource("/input3.txt").getPath).select("text", "stars")
+    df.printSchema()
 
-    "Count of words" should "match" in
-    {
-        assert(counts("package") == 3)
-        assert(counts("classes") == 4)
-        assert(counts("loaded") == 3)
-    }
+    "Count of columns" should "match" in {  assert(df.columns.length == 2)   }
+    "Count of records" should "match" in {  assert(df.count() == 20)    }
 }
