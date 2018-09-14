@@ -118,27 +118,13 @@
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-assembly-plugin</artifactId>
+                <artifactId>maven-jar-plugin</artifactId>
                 <version>3.1.0</version>
-                <configuration>
-                    <descriptors>
-                        <descriptor>src/main/assembly/assembly.xml</descriptor>
-                    </descriptors>
-                </configuration>
                 <executions>
                     <execution>
-                        <id>make-assembly</id>
-                        <phase>package</phase>
                         <goals>
-                            <goal>single</goal>
+                            <goal>test-jar</goal>
                         </goals>
-                        <configuration>
-                            <archive>
-                                <manifest>
-                                    <mainClass>com.tfs.test.MyTest1</mainClass>
-                                </manifest>
-                            </archive>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -190,7 +176,7 @@
                                     <directory>${basedir}/target</directory>
                                     <includes>
                                         <include>${project.name}-${project.version}.jar</include>
-                                        <include>${project.name}-${project.version}-test.jar</include>
+                                        <include>${project.name}-${project.version}-tests.jar</include>
                                     </includes>
                                 </resource>
                             </resources>
