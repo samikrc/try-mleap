@@ -24,7 +24,7 @@ class MyTest1 extends FlatSpec
             .appName("WordCount1")
             .config("spark.master", "local")
             .getOrCreate()
-    val fileStream = MyTest1.this.getClass.getResourceAsStream("/input1.txt")
+    val fileStream = getClass.getResourceAsStream("/input1.txt")
     val input = ss.sparkContext.makeRDD(Source.fromInputStream(fileStream).getLines().toList)
     val counts = input.flatMap(line ⇒ line.split(" "))
             .map(word ⇒ (word, 1))

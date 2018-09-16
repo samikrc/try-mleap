@@ -10,20 +10,26 @@ import org.apache.spark.sql.SparkSession
 
 class MyTest3 extends FlatSpec
 {
+
+    import org.apache.spark
+
     val config: TSConfig = ConfigFactory.load()
 
     private val log = LoggerFactory.getLogger(getClass)
     Logger.getLogger("org").setLevel(Level.OFF)
 
     println("=============================================================================================")
-    println("Test case: Word count with file: input3.txt")
+    println("Test case: Input row and column count with file: input3.txt")
 
     val ss = SparkSession
             .builder()
-            .appName("WordCount3")
+            .appName("InputRowColCount")
             .config("spark.master", "local")
             .getOrCreate()
-    val df = ss.read.json(getClass.getResource("/input3.txt").getPath).select("text", "stars")
+
+    import ss.implicits._
+    val ds = ss.createDataset[String](Source.fromInputStream(getClass.getResourceAsStream("/input3.txt")).getLines().toSeq)
+    val df = ss.read.json(ds).select("text", "stars")
     df.printSchema()
 
     "Count of columns" should "match" in {  assert(df.columns.length == 2)   }
