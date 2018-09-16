@@ -1,5 +1,5 @@
 # try-scalatest
-Project to test out saving and deploying ML pipelines with mleap.
+Project to test out Spark code with ScalaTest package, and saving and deploying Spark ML pipelines with [mleap](https://github.com/combust/mleap).
 
 ## Building Instructions
 
