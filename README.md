@@ -1,6 +1,5 @@
 # try-scalatest
-Project to test out running automated tests with Scalatest.
-Specifically, meant to show a problem I am facing.
+Project to test out saving and deploying ML pipelines with mleap.
 
 ## Building Instructions
 
