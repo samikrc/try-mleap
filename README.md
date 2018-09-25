@@ -1,5 +1,5 @@
 # try-mleap
-Project to test out saving and deploying ML pipelines with mleap.
+Project to test out Spark code with ScalaTest package, and saving and deploying Spark ML pipelines with [mleap](https://github.com/combust/mleap).
 
 ## Building Instructions
 
@@ -14,11 +14,10 @@ Project to test out saving and deploying ML pipelines with mleap.
 
 ## Running Tests through ScalaTest cli
 1. `cd docker` (The compiled jars are copied to this folder, where we already have the scalatest jars)
+
 2. Running individual tests: 
-    `scala -J-Xmx2g -cp "scalatest_2.11-3.0.5.jar:scalactic_2.11-3.0.5.jar:try-scalatest-1.0-SNAPSHOT.jar" org.scalatest.tools.Runner -o -R try-scalatest-1.0-SNAPSHOT-tests.jar -s com.tfs.test.MyTest1` 
-    
-    `scala -J-Xmx2g -cp "scalatest_2.11-3.0.5.jar:scalactic_2.11-3.0.5.jar:try-scalatest-1.0-SNAPSHOT.jar" org.scalatest.tools.Runner -o -R try-scalatest-1.0-SNAPSHOT-tests.jar -s com.tfs.test.MyTest2`
-    
+    `scala -J-Xmx2g -cp "scalatest_2.11-3.0.5.jar:scalactic_2.11-3.0.5.jar:try-scalatest-1.0-SNAPSHOT.jar" org.scalatest.tools.Runner -o -R try-scalatest-1.0-SNAPSHOT-tests.jar -s com.tfs.test.WordCount1Test` 
+        
 3. Running all tests together:
     `scala -J-Xmx2g -cp "scalatest_2.11-3.0.5.jar:scalactic_2.11-3.0.5.jar:try-scalatest-1.0-SNAPSHOT.jar" org.scalatest.tools.Runner -o -R try-scalatest-1.0-SNAPSHOT-tests.jar`
     
