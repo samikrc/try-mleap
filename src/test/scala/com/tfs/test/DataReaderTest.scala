@@ -8,27 +8,30 @@ import com.typesafe.config.{ConfigFactory, Config => TSConfig}
 import scala.io.Source
 import org.apache.spark.sql.SparkSession
 
-class MyTest2 extends FlatSpec
+class DataReaderTest extends FlatSpec
 {
+
+    import org.apache.spark
+
     val config: TSConfig = ConfigFactory.load()
 
     private val log = LoggerFactory.getLogger(getClass)
     Logger.getLogger("org").setLevel(Level.OFF)
 
     println("=============================================================================================")
-    println("Test case: Word count with file: input2.txt")
+    println("Test case: Input row and column count with file: input3.txt")
 
     val ss = SparkSession
             .builder()
-            .appName("WordCount2")
+            .appName("InputRowColCount")
             .config("spark.master", "local")
             .getOrCreate()
-    val fileStream = getClass.getResourceAsStream("/input2.txt")
-    val counts = SparkWordCounter.countWords(ss.sparkContext, Source.fromInputStream(fileStream).getLines().toList)
 
-    "Count of words" should "match" in
-    {
-        assert(counts("name") == 4)
-        assert(counts("Suites") == 5)
-    }
+    import ss.implicits._
+    val ds = ss.createDataset[String](Source.fromInputStream(getClass.getResourceAsStream("/input3.txt")).getLines().toSeq)
+    val df = ss.read.json(ds).select("text", "stars")
+    df.printSchema()
+
+    "Count of columns" should "match" in {  assert(df.columns.length == 2)   }
+    "Count of records" should "match" in {  assert(df.count() == 20)    }
 }

@@ -4,14 +4,14 @@ import org.scalatest.FlatSpec
 import org.apache.log4j.{Level, Logger}
 import org.slf4j.LoggerFactory
 import com.typesafe.config.{ConfigFactory, Config => TSConfig}
-import org.apache.spark.ml.Pipeline
+import org.apache.spark.ml.{Pipeline, PipelineModel}
 import org.apache.spark.ml.classification.{LinearSVC, OneVsRest}
 import org.apache.spark.ml.feature._
 
 import scala.io.Source
 import org.apache.spark.sql.SparkSession
 
-class MyTest4 extends FlatSpec
+class SparkPipelineTest extends FlatSpec
 {
     val config: TSConfig = ConfigFactory.load()
 
@@ -26,6 +26,7 @@ class MyTest4 extends FlatSpec
             .appName("MLPipeline")
             .config("spark.master", "local")
             .getOrCreate()
+
     import ss.implicits._
     val ds = ss.createDataset[String](Source.fromInputStream(getClass.getResourceAsStream("/input3.txt")).getLines().toSeq)
     val df = ss.read.json(ds).select("text", "stars")
@@ -60,6 +61,13 @@ class MyTest4 extends FlatSpec
     ))
 
     val model = pipeline.fit(df)
-    model.transform(df).select("text", "stars", "result").show(false)
+    model.transform(df).select("text", "stars", "result").show()
+    // Save the model
+    model.write.overwrite().save(s"target/test_models/${this.getClass.getSimpleName}")
 
+    // Now load the model back into a new object
+    val readModel = PipelineModel.load(s"target/test_models/${this.getClass.getSimpleName}")
+    // Create a dataframe with new data
+    val newData = Seq(("The food was awesome, but I didn't like the ambience!!", "1")).toDF("text", "stars")
+    readModel.transform(newData).show()
 }

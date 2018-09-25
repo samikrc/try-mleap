@@ -1,4 +1,4 @@
-# try-scalatest
+# try-mleap
 Project to test out saving and deploying ML pipelines with mleap.
 
 ## Building Instructions

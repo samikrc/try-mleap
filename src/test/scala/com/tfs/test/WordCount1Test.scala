@@ -8,7 +8,7 @@ import com.typesafe.config.{ConfigFactory, Config => TSConfig}
 import scala.io.Source
 import org.apache.spark.sql.SparkSession
 
-class MyTest1 extends FlatSpec
+class WordCount1Test extends FlatSpec
 {
 
     val config: TSConfig = ConfigFactory.load()
