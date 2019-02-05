@@ -10,7 +10,7 @@ Project to test out Spark code with ScalaTest package, and saving and deploying 
 
 ### Building
 1. `git clone git@github.com:samikrc/try-mleap.git`
-2. `mvn clean scala:compile package`
+2. `mvn clean scala:compile package -DskipTests`
 
 ## Running Tests through ScalaTest cli
 1. `cd docker` (The compiled jars are copied to this folder, where we already have the scalatest jars)
