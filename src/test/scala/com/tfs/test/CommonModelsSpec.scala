@@ -6,6 +6,12 @@ import org.apache.spark.ml.feature._
 import org.apache.spark.ml.linalg.Vectors
 import org.apache.spark.ml.regression._
 
+/**
+  * Class to test the mleap pileline for a series of testcases.
+  * Directly inspired by the test suite available in the project spark-ml-serving,
+  * available at: https://github.com/Hydrospheredata/spark-ml-serving
+  * Look at: https://github.com/Hydrospheredata/spark-ml-serving/tree/master/src/test/scala/io/hydrosphere/spark_ml_serving
+  */
 class CommonModelsSpec extends GenericTestSpec
 {
     modelTest(

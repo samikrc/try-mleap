@@ -1,23 +1,25 @@
 package com.tfs.test
 
 import java.io.File
-import java.nio.file.Path
 
-import org.apache.spark.{SparkConf, sql}
-import org.apache.spark.ml.bundle.SparkBundleContext
-import org.apache.spark.ml.linalg.{Matrix, Vector}
-import org.apache.spark.ml.{Pipeline, PipelineStage}
-import org.apache.spark.mllib.linalg.{Matrix => OldMatrix, Vector => OldVector}
-import org.apache.spark.sql.{Column, DataFrame, Row, SparkSession}
-import org.scalatest.{BeforeAndAfterAll, FunSpec}
 import ml.combust.bundle.BundleFile
-import ml.combust.mleap.spark.SparkSupport._
 import ml.combust.mleap.runtime.MleapSupport._
 import ml.combust.mleap.runtime.frame.Transformer
+import ml.combust.mleap.spark.SparkSupport._
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.sql.mleap.TypeConverters
+import org.apache.spark.SparkConf
+import org.apache.spark.ml.bundle.SparkBundleContext
+import org.apache.spark.ml.{Pipeline, PipelineStage}
+import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.scalatest.{BeforeAndAfterAll, FunSpec}
 import resource._
 
+/**
+  * Generic set of steps to test any Spark pipeline.
+  * Directly inspired by the test suite available in the project spark-ml-serving,
+  * available at: https://github.com/Hydrospheredata/spark-ml-serving
+  * Look at: https://github.com/Hydrospheredata/spark-ml-serving/tree/master/src/test/scala/io/hydrosphere/spark_ml_serving
+  */
 trait GenericTestSpec extends FunSpec with BeforeAndAfterAll
 {
     Logger.getLogger("org").setLevel(Level.OFF)
