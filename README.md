@@ -16,8 +16,8 @@ Project to test out Spark code with ScalaTest package, and saving and deploying 
 1. `cd docker` (The compiled jars are copied to this folder, where we already have the scalatest jars)
 
 2. Running individual tests: 
-    `scala -J-Xmx2g -cp "scalatest_2.11-3.0.5.jar:scalactic_2.11-3.0.5.jar:try-scalatest-1.0-SNAPSHOT.jar" org.scalatest.tools.Runner -o -R try-scalatest-1.0-SNAPSHOT-tests.jar -s com.tfs.test.WordCount1Test` 
+    `scala -J-Xmx2g -cp "scalatest_2.11-3.0.5.jar:scalactic_2.11-3.0.5.jar:try-mleap-1.0-SNAPSHOT.jar" org.scalatest.tools.Runner -o -R try-mleap-1.0-SNAPSHOT-tests.jar -s com.tfs.test.CommonModelsSpec` 
         
 3. Running all tests together:
-    `scala -J-Xmx2g -cp "scalatest_2.11-3.0.5.jar:scalactic_2.11-3.0.5.jar:try-scalatest-1.0-SNAPSHOT.jar" org.scalatest.tools.Runner -o -R try-scalatest-1.0-SNAPSHOT-tests.jar`
+    `scala -J-Xmx2g -cp "scalatest_2.11-3.0.5.jar:scalactic_2.11-3.0.5.jar:try-scalatest-1.0-SNAPSHOT.jar" org.scalatest.tools.Runner -o -R try-mleap-1.0-SNAPSHOT-tests.jar`
     
