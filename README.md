@@ -9,7 +9,7 @@ Project to test out Spark code with ScalaTest package, and saving and deploying 
 3. scala, version 2.11.8
 
 ### Building
-1. `git clone https://github.com/samikrc/try-scalatest.git`
+1. `git clone git@github.com:samikrc/try-mleap.git`
 2. `mvn clean scala:compile package`
 
 ## Running Tests through ScalaTest cli
