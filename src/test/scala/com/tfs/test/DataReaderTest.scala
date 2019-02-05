@@ -11,8 +11,6 @@ import org.apache.spark.sql.SparkSession
 class DataReaderTest extends FlatSpec
 {
 
-    import org.apache.spark
-
     val config: TSConfig = ConfigFactory.load()
 
     private val log = LoggerFactory.getLogger(getClass)
