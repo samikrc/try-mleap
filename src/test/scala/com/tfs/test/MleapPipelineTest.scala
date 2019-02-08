@@ -41,8 +41,8 @@ class MleapPipelineTest extends FlatSpec
     val df = ss.read.json(ds).select("text", "stars")
 
     // Define the pipeline
-    // Start with tokenization and stopword removal
     val pipeline = new Pipeline().setStages(Array(
+        // Start with tokenization and stopword removal
         new RegexTokenizer().setInputCol("text").setOutputCol("raw").setPattern("\\W").setToLowercase(false),
         new StopWordsRemover().setInputCol("raw").setOutputCol("filtered"),
         // First generate the n-grams: 2-4

@@ -154,9 +154,9 @@ class CommonModelsSpec extends GenericTestSpec
             new StringIndexer()
                     .setInputCol("category")
                     .setOutputCol("categoryIndex"),
-            new OneHotEncoder()
-                    .setInputCol("categoryIndex")
-                    .setOutputCol("categoryVec")
+            new OneHotEncoderEstimator()
+                    .setInputCols(Array("categoryIndex"))
+                    .setOutputCols(Array("categoryVec"))
         ),
         columns = Seq(
             "categoryVec"
