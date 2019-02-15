@@ -324,6 +324,25 @@ class CommonModelsSpec extends GenericTestSpec
 
     modelTest(
         data = session.createDataFrame(Seq(
+            (0L, "a b c d e spark", 1.0),
+            (1L, "b d", 0.0),
+            (2L, "spark f g h", 1.0),
+            (3L, "hadoop mapreduce", 0.0)
+        )).toDF("id", "text", "label"),
+        steps = Seq(
+            new Tokenizer().setInputCol("text").setOutputCol("words"),
+            new HashingTF().setNumFeatures(1000).setInputCol("words").setOutputCol("features"),
+            new LinearSVC()
+                    .setMaxIter(10)
+                    .setRegParam(0.3)
+        ),
+        columns = Seq(
+            "prediction"
+        )
+    )
+
+    modelTest(
+        data = session.createDataFrame(Seq(
             (Vectors.dense(4.0, 0.2, 3.0, 4.0, 5.0), 1.0),
             (Vectors.dense(3.0, 0.3, 1.0, 4.1, 5.0), 1.0),
             (Vectors.dense(2.0, 0.5, 3.2, 4.0, 5.0), 1.0),
