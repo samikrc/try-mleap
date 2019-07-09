@@ -1,0 +1,29 @@
+package ml.combust.mleap.runtime.transformer.feature
+
+import ml.combust.mleap.core.feature.ImputerCustomModel
+import ml.combust.mleap.core.types._
+import ml.combust.mleap.tensor.Tensor
+import ml.combust.mleap.core.util.VectorConverters._
+import ml.combust.mleap.runtime.frame.{FrameBuilder, Row, Transformer}
+import ml.combust.mleap.runtime.function.{StructSelector, UserDefinedFunction}
+
+import scala.util.Try
+
+case class ImputerCustom(override val uid: String = Transformer.uniqueName("imputercustom"),
+                         override val shape: NodeShape,
+                         override val model: ImputerCustomModel) extends Transformer {
+  private val f = (values: Row) => {
+    values.get(0)}
+  val exec: UserDefinedFunction = UserDefinedFunction(f,
+    outputSchema.fields.head.dataType,
+    Seq(SchemaSpec(inputSchema)))
+
+  val outputCol: String = outputSchema.fields.head.name
+  val outputType = outputSchema.fields.head.dataType
+  val inputCols: Seq[String] = inputSchema.fields.map(_.name)
+  private val inputSelector: StructSelector = StructSelector(inputCols)
+
+  override def transform[TB <: FrameBuilder[TB]](builder: TB): Try[TB] = {
+    builder.withColumn(outputCol, inputSelector)(exec)
+  }
+}

@@ -15,7 +15,7 @@ import ml.combust.bundle.BundleFile
 import ml.combust.mleap.spark.SparkSupport._
 import ml.combust.mleap.runtime.MleapSupport._
 import ml.combust.mleap.spark.SparkLeapFrame
-import org.apache.spark.sql.mleap.TypeConverters
+import org.apache.spark.sql.mleap.TypeConvertersCustom
 import resource._
 
 import scala.io.Source

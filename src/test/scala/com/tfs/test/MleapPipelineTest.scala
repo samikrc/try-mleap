@@ -4,7 +4,7 @@ import java.io.File
 
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.ml.Pipeline
-import org.apache.spark.ml.classification.{LinearSVC, OneVsRest}
+import org.apache.spark.ml.classification.{LinearSVC, OneVsRest,LogisticRegression}
 import org.apache.spark.ml.feature._
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.ml.bundle.SparkBundleContext
@@ -14,8 +14,9 @@ import org.scalatest.FlatSpec
 import ml.combust.bundle.BundleFile
 import ml.combust.mleap.spark.SparkSupport._
 import ml.combust.mleap.runtime.MleapSupport._
+import ml.combust.mleap.runtime.serialization.FrameReader
 import ml.combust.mleap.spark.SparkLeapFrame
-import org.apache.spark.sql.mleap.TypeConverters
+import org.apache.spark.sql.mleap.TypeConvertersCustom
 import resource._
 
 import scala.io.Source
@@ -32,10 +33,10 @@ class MleapPipelineTest extends FlatSpec
     println("Test case: ML pipeline with file: input3.txt")
 
     val ss = SparkSession
-            .builder()
-            .appName("MLPipeline")
-            .config("spark.master", "local")
-            .getOrCreate()
+      .builder()
+      .appName("MLPipeline")
+      .config("spark.master", "local")
+      .getOrCreate()
     import ss.implicits._
     val ds = ss.createDataset[String](Source.fromInputStream(getClass.getResourceAsStream("/input3.txt")).getLines().toSeq)
     val df = ss.read.json(ds).select("text", "stars")
@@ -64,7 +65,7 @@ class MleapPipelineTest extends FlatSpec
         // Set up a StringIndexer for the response column
         new StringIndexer().setInputCol("stars").setOutputCol("label"),
         // Now run an One-Vs-Rest SVM model
-        new OneVsRest().setClassifier(new LinearSVC().setMaxIter(10).setRegParam(0.1)),
+        new OneVsRest().setClassifier(new LogisticRegression().setMaxIter(10).setRegParam(0.1)),
         // Finally, we need to convert the prediction back to own labels
         new IndexToString().setInputCol("prediction").setOutputCol("result")
     ))
@@ -72,11 +73,16 @@ class MleapPipelineTest extends FlatSpec
     val model = pipeline.fit(df)
     // Create a df with only one row to transform and save the pipeline
     val smallDF = df.limit(1).toDF()
+
+    /*var inputWithSchema = "{\"rows\":[\"I am a bot machine\"]" + ",\"schema\":{\"fields\":[{\"type\":\"string\",\"name\":\"lineText\"}]}"  + "}"
+    val bytes1 = inputWithSchema.getBytes("UTF-8")
+    val frame1 = FrameReader("ml.combust.mleap.json").fromBytes(bytes1).get*/
     //model.transform(df).show(false)
 
     // Save pipeline
     // Make sure that the model folder exist
-    val modelDir = new File(s"./target/test_models/${this.getClass.getSimpleName}").getCanonicalFile
+    //val modelDir = new File(s"./target/test_models/${this.getClass.getSimpleName}").getCanonicalFile
+    val modelDir = new File("/var/tellme/data/model")
     if(!modelDir.exists()) modelDir.mkdirs()
     // Now delete the specific file
     val file = new File(s"${modelDir.getCanonicalPath}/spark-pipeline.zip")
@@ -89,8 +95,8 @@ class MleapPipelineTest extends FlatSpec
     println(s"Model saved at [${file.getPath}]")
 
     // Load back the Spark pipeline we saved in the previous section
-    val bundle = (for(bundleFile <- managed(BundleFile(s"jar:file:${file.getPath}"))) yield
-    {   bundleFile.loadMleapBundle().get    }).opt.get
+    /*val bundle = (for(bundleFile <- managed(BundleFile(s"jar:file:${file.getPath}"))) yield
+        {   bundleFile.loadMleapBundle().get    }).opt.get
     println(s"Model loaded from [${file.getPath}]")
 
     import ml.combust.mleap.runtime.frame.{DefaultLeapFrame, Row}
@@ -106,5 +112,7 @@ class MleapPipelineTest extends FlatSpec
     mpipe.transform(frame).get.toSpark.show()
 
     val data = Seq(("The food was awesome, but I didn't like the ambience!!", "1")).toDF("text", "stars").toSparkLeapFrame
-    mpipe.transform(data).get.toSpark.show()
+    mpipe.transform(data).get.toSpark.show()*/
+    println("Complete")
+
 }
