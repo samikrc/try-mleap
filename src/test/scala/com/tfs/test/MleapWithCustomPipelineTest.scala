@@ -4,9 +4,10 @@ import java.io.{File, FileInputStream}
 import java.nio.file.Files
 import java.util.zip.GZIPInputStream
 
+import com.tfs.flashml.core.featuregeneration.transformer.CategoricalColumnsTransformer
 import com.tfs.test.Util.Json
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.ml.Pipeline
+import org.apache.spark.ml.{Model, Pipeline, feature}
 import org.apache.spark.ml.classification._
 import org.apache.spark.ml.feature._
 import org.apache.spark.sql.SparkSession
@@ -21,6 +22,7 @@ import ml.combust.mleap.runtime.function.StructSelector
 import ml.combust.mleap.spark.SparkLeapFrame
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
+import org.apache.spark.sql.functions.col
 import org.apache.spark.sql.mleap.TypeConvertersCustom
 import resource._
 
@@ -56,12 +58,14 @@ class MleapWithCustomPipelineTest extends FlatSpec
   val regexMap = Seq(
     ("_class_hello","\\b(hola|hello|hi|hey)\\b")
   )
-  val ds = ss.createDataset[String](Source.fromInputStream(getClass.getResourceAsStream("/input3.txt")).getLines().toSeq)
+  val ds = ss.createDataset[String](Source.fromInputStream(getClass.getResourceAsStream("/input4.txt")).getLines().toSeq)
   val df = ss.read.json(ds).select("text", "stars","cool","useful")
+  //val df = ss.sql("select * from flashml.hilton_ci_train limit 20")
+  /*val df = ss.sqlContext.read.format("csv")
+  .option("header",true)
+  .load(getClass.getResource("/spark_demo.csv").getPath)
+  .withColumn("test_double",col("test_double").cast("double"))*/
   val wordMap = Map("love"->"_class_feeling","breakfast"-> "_class_food")
-
-  //val df = ss.sql("select * from flashml.NULL_DATA")
-
 
   // Define the pipeline
   val pipeline = new Pipeline().setStages(Array(
@@ -82,20 +86,33 @@ class MleapWithCustomPipelineTest extends FlatSpec
     new IDF().setInputCol("hash").setOutputCol("idf"),
     new IDF().setInputCol("bghash").setOutputCol("bgidf"),
     new IDF().setInputCol("skiphash").setOutputCol("skipidf"),
-    new VectorAssembler().setInputCols(Array("idf","bgidf","skipidf")).setOutputCol("features"),
+    new VectorAssembler().setInputCols(Array("idf","bgidf","skipidf","useful")).setOutputCol("features"),
     new StringIndexer().setInputCol("stars").setOutputCol("label"),
     // Now run an One-Vs-Rest SVM model
-    new OneVsRestCustom().setClassifier(new LinearSVC().setMaxIter(1).setRegParam(0.1)),
-    new PlattScalar().setIsMultiIntent(true).setLabelCol("label")
+    //new LogisticRegression().setMaxIter(1).setRegParam(0.1)
+    new LinearSVC().setMaxIter(1).setRegParam(0.1),
+    //new OneVsRestCustom().setClassifier(new LinearSVC().setMaxIter(1).setRegParam(0.1)),
+    new PlattScalar().setIsMultiIntent(false).setLabelCol("label")
+   /* new ImputerCustom().setInputCol("test_string").setReplacementValue("other"),
+    new ImputerCustom().setInputCol("test_double").setReplacementValue("0")*/
+
   ))
 
   val model = pipeline.fit(df)
   val temp = model.transform(df)
   temp.show()
+  val pipeline2 = new Pipeline().setStages(Array(new UpliftTransformer().setBaseClassifier(model.stages(18).asInstanceOf[Model[_]]).setPlattScalar(model.stages(19).asInstanceOf[PlattScalarModel])))
+  val model2 = pipeline2.fit(temp)
+  val temp2 = model2.transform(temp)
+
+  val finalPipeline = new Pipeline().setStages(model.stages ++ model2.stages)
+  val finalModel = finalPipeline.fit(df)
+  val finalDf = finalModel.transform(df)
+  finalDf.show()
+  //model.transform(df).show(false)
 
   // Create a df with only one row to transform and save the pipeline
   val smallDF = df.limit(1).toDF()
-  //model.transform(df).show(false)
 
   // Save pipeline
   // Make sure that the model folder exist
@@ -106,11 +123,12 @@ class MleapWithCustomPipelineTest extends FlatSpec
   if(file.exists()) file.delete()
 
   // Now serialize the pipeline object
-  val sbc = SparkBundleContext().withDataset(model.transform(smallDF))
+  val sbc = SparkBundleContext().withDataset(finalModel.transform(smallDF))
   for(bf <- managed(BundleFile(s"jar:file:${file.getPath}")))
-  {   model.writeBundle.save(bf)(sbc).get }
+  {   finalModel.writeBundle.save(bf)(sbc).get }
   println(s"Model saved at [${file.getPath}]")
 
+  //val file = new File(s"/home/udhay/mleap1.zip")
   // Load back the Spark pipeline we saved in the previous section
   val bundle = (for(bundleFile <- managed(BundleFile(s"jar:file:${file.getPath}"))) yield
     {   bundleFile.loadMleapBundle().get    }).opt.get

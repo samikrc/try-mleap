@@ -34,7 +34,7 @@ class ImputerCustomOp extends SimpleSparkOp[ImputerCustom] {
       //val inputShapes = obj.getInputCol.map(i => sparkToMleapDataShape(dataset.schema(i),dataset): DataShape)
       val inputShape = sparkToMleapDataShape(dataset.schema(obj.getInputCol),dataset):DataShape
 
-      model.withValue("input_shape", Value.dataShape(inputShape))
+      model.withValue("input_shape", Value.dataShape(inputShape.withIsNullable(true)))
         .withValue("input_type", Value.string(inputSchema)).
         withValue("surrogate_value", Value.string(obj.getReplacementValue))
     }

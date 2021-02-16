@@ -2,6 +2,8 @@ package ml.combust.mleap.core.feature
 
 import ml.combust.mleap.core.Model
 import ml.combust.mleap.core.types._
+import org.apache.spark.sql.functions._
+import org.apache.spark.sql.catalyst.expressions.NaNvl
 
 /**
   * Imputer core logic
@@ -25,26 +27,16 @@ case class ImputerCustomModel(inputType:String,surrogateValue:String,inputShape:
   }
 
   def apply(value: Any): Any = {
-    /*value match {
-      case Some(a) => if (inputType != "StringType" && a.isInstanceOf[String]) replace else value.get
-      case None => surrogateValue
-    }*/
-    /*Option(value) match {
-      case Some(a) => value
-      case None => surrogateValue
-    }*/
-    value
-
-    /*val temp1 = value.map{ x => val temp = Option(x)
-    temp match {
-      case Some(a) => if (inputType != "StringType" && a.isInstanceOf[String]) replace else x
-      case None => replace
-    }}*/
-    /*val colValue = Option(value.head)
-    colValue match {
-      case Some(a) => if (inputType != "StringType" && a.isInstanceOf[String]) replace else colValue.get
-      case None => replace
-    }*/
+    /*var result = value.get
+    value match{
+      case Some(a) => result = a
+      case None => result = replace
+    }
+    result*/
+    val result = if(value == null || value.toString.equals("NaN")) replace
+    else if (inputType != "StringType" && value.isInstanceOf[String]) replace
+    else value
+    result
   }
 
   override def inputSchema: StructType = StructType(StructField("input" ,DataType(inputStructType,inputShape))).get

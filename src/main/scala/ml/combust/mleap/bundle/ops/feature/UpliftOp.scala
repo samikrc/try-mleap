@@ -8,6 +8,7 @@ import ml.combust.bundle.dsl._
 import ml.combust.mleap.bundle.ops.MleapOp
 import ml.combust.mleap.runtime.MleapContext
 import ml.combust.mleap.runtime.types.BundleTypeConverters._
+import org.apache.spark.ml.linalg.Vectors
 
 /**
   * Serializer for Gram assembler to run in the mleap platform
@@ -20,13 +21,22 @@ class UpliftOp extends MleapOp[Uplift, UpliftModel] {
 
     override def store(model: Model, obj: UpliftModel)
                       (implicit context: BundleContext[MleapContext]): Model = {
-      model.withValue("input_shape", Value.dataShape(mleapToBundleShape(obj.inputShape)))
+      model
     }
 
     override def load(model: Model)
                      (implicit context: BundleContext[MleapContext]): UpliftModel = {
-      val inputShape = bundleToMleapShape(model.value("input_shape").getDataShape)
-      UpliftModel(inputShape)
+      val baseCoefficients = Vectors.dense(model.value(s"baseCoefficients").getTensor[Double].toArray)
+      val baseIntercept = model.value(s"baseIntercept").getDouble
+      val modelAtt = model.attributes.lookup
+      if(modelAtt.contains("plattCoefficients")) {
+        val plattCoefficients = Vectors.dense(model.value(s"plattCoefficients").getTensor[Double].toArray)
+        val plattIntercept = model.value(s"plattIntercept").getDouble
+        UpliftModel(baseCoefficients,baseIntercept,plattCoefficients,plattIntercept)
+      }
+      else
+        UpliftModel(baseCoefficients,baseIntercept)
+
     }
   }
 

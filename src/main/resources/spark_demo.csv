@@ -1,0 +1,7 @@
+id,test_string,test_double,test_cat
+1,"hello there",,"a"
+2,"MLeap is good",0.2,"b"
+3,"from me",NaN,"a"
+4,"Spark prograaming is simple",0.33,
+5,,3,
+6,"Spark is from apache",a,"c"

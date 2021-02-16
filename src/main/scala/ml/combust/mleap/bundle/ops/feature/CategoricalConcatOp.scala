@@ -1,8 +1,8 @@
 package ml.combust.mleap.bundle.ops.feature
 
 import ml.combust.bundle.BundleContext
-import ml.combust.mleap.core.feature.CatModel
-import ml.combust.mleap.runtime.transformer.feature.CatConcat
+import ml.combust.mleap.core.feature.CategoricalModel
+import ml.combust.mleap.runtime.transformer.feature.CategoricalConcat
 import ml.combust.bundle.op.OpModel
 import ml.combust.bundle.dsl._
 import ml.combust.mleap.bundle.ops.MleapOp
@@ -12,23 +12,23 @@ import ml.combust.mleap.runtime.types.BundleTypeConverters._
 /**
   * Created by hollinwilkins on 8/22/16.
   */
-class CatOp extends MleapOp[CatConcat, CatModel] {
-  override val Model: OpModel[MleapContext, CatModel] = new OpModel[MleapContext, CatModel] {
-    override val klazz: Class[CatModel] = classOf[CatModel]
+class CategoricalConcatOp extends MleapOp[CategoricalConcat, CategoricalModel] {
+  override val Model: OpModel[MleapContext, CategoricalModel] = new OpModel[MleapContext, CategoricalModel] {
+    override val klazz: Class[CategoricalModel] = classOf[CategoricalModel]
 
     override def opName: String = "cat_concat"
 
-    override def store(model: Model, obj: CatModel)
+    override def store(model: Model, obj: CategoricalModel)
                       (implicit context: BundleContext[MleapContext]): Model = {
       model.withValue("input_shapes", Value.dataShapeList(obj.inputShapes.map(mleapToBundleShape)))
     }
 
     override def load(model: Model)
-                     (implicit context: BundleContext[MleapContext]): CatModel = {
+                     (implicit context: BundleContext[MleapContext]): CategoricalModel = {
       val inputShapes = model.value("input_shapes").getDataShapeList.map(bundleToMleapShape)
-      CatModel(inputShapes)
+      CategoricalModel(inputShapes)
     }
   }
 
-  override def model(node: CatConcat): CatModel = node.model
+  override def model(node: CategoricalConcat): CategoricalModel = node.model
 }

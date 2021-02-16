@@ -13,8 +13,13 @@ case class ImputerCustom(override val uid: String = Transformer.uniqueName("impu
                          override val shape: NodeShape,
                          override val model: ImputerCustomModel) extends Transformer {
   private val f = (values: Row) => {
-    values.get(0)}
+    val t = Some(values.head)
+    model(values.head)}
   val exec: UserDefinedFunction = UserDefinedFunction(f,
+    outputSchema.fields.head.dataType,
+    Seq(SchemaSpec(inputSchema)))
+  val f1 = (values:Row) => values.head
+  val exec1: UserDefinedFunction = UserDefinedFunction(f1,
     outputSchema.fields.head.dataType,
     Seq(SchemaSpec(inputSchema)))
 
@@ -22,8 +27,9 @@ case class ImputerCustom(override val uid: String = Transformer.uniqueName("impu
   val outputType = outputSchema.fields.head.dataType
   val inputCols: Seq[String] = inputSchema.fields.map(_.name)
   private val inputSelector: StructSelector = StructSelector(inputCols)
+  private val outputSelector:StructSelector = StructSelector(Seq(outputCol))
 
   override def transform[TB <: FrameBuilder[TB]](builder: TB): Try[TB] = {
-    builder.withColumn(outputCol, inputSelector)(exec)
+    builder.withColumn(outputCol, inputSelector)(exec).get.drop(inputCols.head).get.withColumn(inputCols.head,outputSelector)(exec1).get.drop(outputCol)
   }
 }

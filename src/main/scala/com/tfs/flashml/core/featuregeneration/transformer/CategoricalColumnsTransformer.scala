@@ -1,10 +1,11 @@
-package org.apache.spark.ml.feature
+package com.tfs.flashml.core.featuregeneration.transformer
+
 import org.apache.spark.ml.Transformer
 import org.apache.spark.ml.param.ParamMap
 import org.apache.spark.ml.param.shared.{HasHandleInvalid, HasInputCols, HasOutputCol}
 import org.apache.spark.ml.util.{DefaultParamsReadable, DefaultParamsWritable, Identifiable}
 import org.apache.spark.sql.{Column, DataFrame, Dataset}
-import org.apache.spark.sql.functions.{array, concat, lit, col}
+import org.apache.spark.sql.functions.{array, concat, lit}
 import org.apache.spark.sql.types._
 
 /** This first concatenated the column name to the column value and the groups all the categorical
@@ -13,7 +14,7 @@ import org.apache.spark.sql.types._
   * @since 22/8/18
   */
 
-class CategoricalConcatTransformer(override val uid: String)
+class CategoricalColumnsTransformer (override val uid: String)
   extends Transformer with HasInputCols with HasOutputCol
     with DefaultParamsWritable {
 
@@ -23,7 +24,7 @@ class CategoricalConcatTransformer(override val uid: String)
 
   def setOutputCol(value: String): this.type = set(outputCol, value)
 
-  def copy(extra: ParamMap): CategoricalConcatTransformer = defaultCopy(extra)
+  def copy(extra: ParamMap): CategoricalColumnsTransformer = defaultCopy(extra)
 
   def transform(df: Dataset[_]): DataFrame = {
     val nameConcatedColumnArray: Array[Column] = for (column <- $(inputCols)) yield concat(lit(column + "_"), df(column))
@@ -36,7 +37,7 @@ class CategoricalConcatTransformer(override val uid: String)
       val idx = schema.fieldIndex(strCol)
       val field = schema.fields(idx)
       //todo MODIFIED
-      if (field.dataType != StringType && field.dataType != IntegerType && field.dataType!=DoubleType && field.dataType!=ArrayType(StringType,true)) {
+      if (field.dataType != StringType && field.dataType != IntegerType && field.dataType!=DoubleType) {
         throw new Exception(s"Input type ${field.dataType} did not match required type StringType/IntegerType")
       }
     }
@@ -45,7 +46,7 @@ class CategoricalConcatTransformer(override val uid: String)
   }
 }
 
-object CategoricalConcatTransformer
-  extends DefaultParamsReadable[CategoricalConcatTransformer] {
-  override def load(path: String): CategoricalConcatTransformer = super.load(path)
+object CategoricalColumnsTransformer
+  extends DefaultParamsReadable[CategoricalColumnsTransformer] {
+  override def load(path: String): CategoricalColumnsTransformer = super.load(path)
 }

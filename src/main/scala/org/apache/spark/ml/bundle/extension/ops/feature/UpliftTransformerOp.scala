@@ -6,10 +6,11 @@ import ml.combust.bundle.op.{OpModel, OpNode}
 import ml.combust.bundle.dsl._
 import ml.combust.mleap.core.types
 import org.apache.spark.ml.bundle._
-import org.apache.spark.ml.feature.UpliftTransformer
+import org.apache.spark.ml.feature.{OneVsRestCustomModel, UpliftTransformer}
 import org.apache.spark.sql.mleap.TypeConvertersCustom._
 import ml.combust.mleap.runtime.types.BundleTypeConverters._
-import org.apache.spark.ml.linalg.{Matrix, MatrixUDT, Vector, VectorUDT}
+import org.apache.spark.ml.classification.{BinaryLogisticRegressionWithDoubleResponseModel, ClassificationModel, LinearSVCModel, LogisticRegressionModel, PlattScalarModel}
+import org.apache.spark.ml.linalg.{Matrix, MatrixUDT, Vector, VectorUDT, Vectors}
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.types._
 
@@ -28,11 +29,19 @@ class UpliftTransformerOp extends SimpleSparkOp[UpliftTransformer] {
                       (implicit context: BundleContext[SparkBundleContext]): Model = {
       assert(context.context.dataset.isDefined, BundleHelper.sampleDataframeMessage(klazz))
 
-      val dataset = context.context.dataset.get
-      //val inputShapes = obj.getInputCol.map(i => sparkToMleapDataShape(dataset.schema(i),dataset): DataShape)
-      val inputShape = sparkToMleapDataShape(dataset.schema(obj.getInputCol),dataset):DataShape
-
-      model.withValue("input_shape", Value.dataShape(inputShape))
+      val (baseCoefficients,baseIntercept) = obj.getBaseClassifier match{
+        case lr:LogisticRegressionModel => (lr.coefficients,lr.intercept)
+        case svm:LinearSVCModel => (svm.coefficients,svm.intercept)
+        case _ => throw new Exception("Uplift is supported only for binomial cases")
+      }
+      val (plattCoefficients,plattIntercept) = if(obj.getBaseClassifier.isInstanceOf[LinearSVCModel] && true)
+      (obj.getPlattScaler.models(0).coefficients,obj.getPlattScaler.models(0).intercept) else (Vectors.dense(Array(0.0)),0.0)
+      var resultModel = model.withValue("baseCoefficients",Value.vector(baseCoefficients.toArray))
+        .withValue("baseIntercept",Value.double(baseIntercept))
+      if(obj.getBaseClassifier.isInstanceOf[LinearSVCModel] && true)
+        resultModel = resultModel.withValue("plattCoefficients",Value.vector(plattCoefficients.toArray))
+        .withValue("plattIntercept",Value.double(plattIntercept))
+      resultModel
     }
 
     override def load(model: Model)
@@ -44,10 +53,11 @@ class UpliftTransformerOp extends SimpleSparkOp[UpliftTransformer] {
   }
 
   override def sparkInputs(obj: UpliftTransformer): Seq[ParamSpec] = {
-    Seq("input" -> obj.inputCol)
+    Seq("features" -> obj.featuresCol)
   }
 
   override def sparkOutputs(obj: UpliftTransformer): Seq[SimpleParamSpec] = {
-    Seq("output" -> obj.outputCol)
+    Seq("probability" -> obj.probabilityCol)
   }
 }
+

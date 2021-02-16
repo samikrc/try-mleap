@@ -9,23 +9,15 @@ import org.apache.spark.ml.linalg.{Vector, Vectors}
 import scala.collection.mutable
 import org.apache.spark.ml.linalg.mleap.BLAS
 
-
-/** Class for multinomial one vs rest models.
-  *
-  * One vs rest models are comprised of a series of
-  * [[ProbabilisticClassificationModel]]s which are used to
-  * predict each class.
-  *
-  * @param classifiers binary classification models
-  */
+/**
+ * This is the core logic to compute the probability from the raw prediction value of LinearSVC class
+ * @param coefficients
+ * @param intercepts
+ * @param numClasses
+ */
 case class PlattScalarModel(coefficients: Array[Vector],
                             intercepts: Array[Double],
                             numClasses: Int) extends Model {
-  /** Alias for [[ml.combust.mleap.core.classification.OneVsRestModel#predict]].
-    *
-    * @param features feature vector
-    * @return prediction
-    */
 
   private val score: (Vector,Int) => Double = (features,index) =>
   {
@@ -33,40 +25,51 @@ case class PlattScalarModel(coefficients: Array[Vector],
     1.0 / (1.0 + math.exp(-m))
   }
 
-  def apply(features: Vector): Double = predictOutput(features)
+  def apply(features: Any): Vector = predictProbVector(features)
 
-  def predictOutput(features: Vector): Double = {
-    predict(features)._2
+  def predictProbVector(features:Any):Vector = {
+    predict(features)
   }
 
-  def predictProbVector(features:Vector):Vector = {
-    predict(features)._1
+  def predictByMaxProb(probability:Any):Double = {
+    probability match{
+      case x:Tensor[Double] => {
+        if(x.toArray.length == 1)
+          if(x(0) > 0.5) 1.0 else 0.0
+        else
+          x.toArray.zipWithIndex.maxBy(_._1)._2.toDouble
+      }
+    }
   }
 
-  /** Predict the class and probability for a feature vector.
+  /** Predict the probability for a feature vector.
     *
     * @param features feature vector
-    * @return (predicted class, rawPredictions of class)
+    * @return positive probability vector
     */
-  def predict(features: Vector): (Vector,Double) = {
-    val probArray = mutable.ArrayBuilder.make[Double]
-    val indices = mutable.ArrayBuilder.make[Int]
-    var cur = 0
-    val (prediction,probability) =
-        (0 until numClasses).map { i =>
-        val prob = score(Vectors.dense(Array(features(i))), i)
-        indices += cur
-        probArray += prob
-        cur += 1
-        (i.toDouble, prob)
-      }.maxBy(_._2)
 
-    //(Vectors.sparse(cur, indices.result(), probArray.result()).compressed,prediction)
-    (Vectors.dense(probArray.result()),prediction)
+  def predict(features: Any): Vector = {
+    val probArray = mutable.ArrayBuilder.make[Double]
+    features match{
+      case x:Tensor[Double] =>
+        if(numClasses > 1) {
+          (0 until numClasses).map { i =>
+            val prob = score(Vectors.dense(Array(x(i))), i)
+            probArray += prob
+          }
+        }
+        else {
+          val prob = score(Vectors.dense(Array(x(1))), 0)
+          probArray += prob
+        }
+    }
+    val probVector = probArray.result()
+    Vectors.dense(probVector)
   }
 
   override def inputSchema: StructType = StructType("rawPrediction" -> TensorType.Double(numClasses)).get
 
-  override def outputSchema: StructType = StructType("probability" -> TensorType.Double(numClasses)).get
+  override def outputSchema: StructType = StructType("probability" -> TensorType.Double(numClasses),
+    "prediction" -> ScalarType.Double).get
 
 }

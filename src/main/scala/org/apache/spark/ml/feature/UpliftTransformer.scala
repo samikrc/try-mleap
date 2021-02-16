@@ -1,8 +1,10 @@
 package org.apache.spark.ml.feature
 
 import org.apache.hadoop.fs.Path
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.ml.classification.PlattScalarModel
 import org.apache.spark.ml.linalg.{Vector, Vectors}
-import org.apache.spark.ml.param.shared.{HasInputCol, HasOutputCol}
+import org.apache.spark.ml.param.shared.{HasFeaturesCol, HasProbabilityCol}
 import org.apache.spark.ml.param.{Param, ParamMap, ParamPair, Params}
 import org.apache.spark.ml.util._
 import org.apache.spark.ml.{Model, Transformer}
@@ -10,32 +12,32 @@ import org.apache.spark.mllib.linalg.VectorUDT
 import org.apache.spark.sql.functions.{col, udf, lit}
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{DataFrame, Dataset}
-import org.json4s.{DefaultFormats, JObject, _}
 import org.json4s.JsonDSL._
 import org.json4s.jackson.JsonMethods._
+import org.json4s.{DefaultFormats, _}
 
 /**
-  * Params for [[UpliftTransformer]].
-  */
-trait UpliftParams extends Params {
+ * Params for [[UpliftTransformer]].
+ */
+trait UpliftParams extends Params with HasFeaturesCol with HasProbabilityCol{
 
   type ModelType = Model[_]
 
-  //type PlattScalarModelType = PlattScalarModel
+  type PlattScalarModelType = PlattScalarModel
 
   /**
-    * param for the base classifier
-    */
+   * param for the base classifier
+   */
   final val baseClassifier: Param[ModelType] = new Param(this, "baseClassifier", "base classifier")
 
   def getBaseClassifier: ModelType = $(baseClassifier)
 
   /**
-    * param fo platt scaling model
-    */
-  /*final val plattScalar: Param[PlattScalarModelType] = new Param(this, "plattScalingModel", "platt scaling model")
+   * param fo platt scaling model
+   */
+  final val plattScalar: Param[PlattScalarModelType] = new Param(this, "plattScalingModel", "platt scaling model")
 
-  def getPlattScaler: PlattScalarModelType = $(plattScalar)*/
+  def getPlattScaler: PlattScalarModelType = $(plattScalar)
 
 }
 
@@ -54,8 +56,8 @@ object UpliftParams {
     instance match {
       case uplift: UpliftTransformer =>
         checkElement(uplift.getBaseClassifier, "model")
-        /*if (uplift.extractParamMap.contains(uplift.plattScalar))
-          checkElement(uplift.getPlattScaler, "model")*/
+        if (uplift.extractParamMap.contains(uplift.plattScalar))
+          checkElement(uplift.getPlattScaler, "model")
       case _ => // no need to check PlattScalar here
     }
 
@@ -63,20 +65,17 @@ object UpliftParams {
 }
 
 /**
-  * Uplift Transformation applies the model on the data twice. First the treatment
-  * variable is set to 0 and scoring is done, next it is set to 1 followed by scoring. These two scores are subtracted to get the uplift probability
-  *
-  * Uplift Transformation is not applicable for multi intent models
-  *
-  * @author Neelesh Sambhajiche <neelesh.sa@247-inc.com>
-  * @since 22/8/18
-  */
+ * Uplift Transformation applies the model on the data twice. First the treatment
+ * variable is set to 0 and scoring is done, next it is set to 1 followed by scoring. These two scores are subtracted to get the uplift probability. <br/>
+ * <br />
+ * Uplift Transformation is not applicable for multi intent models.
+ *
+ * @since 22/8/18
+ */
 class UpliftTransformer (override val uid: String)
   extends Transformer
     with UpliftParams
-    with MLWritable
-    with HasOutputCol
-with HasInputCol{
+    with MLWritable {
 
   def this() = this(Identifiable.randomUID("uplift"))
 
@@ -84,21 +83,16 @@ with HasInputCol{
     set(baseClassifier, value.asInstanceOf[ModelType])
   }
 
-  def setOutputCol(value:String = "modelProbability"):this.type = set(outputCol,value)
-  /*def setPlattScalar(value: PlattScalarModel): this.type = {
+  def setPlattScalar(value: PlattScalarModel): this.type = {
     set(plattScalar, value.asInstanceOf[PlattScalarModel])
-  }*/
-  def setInputCol(value:String = "modelProbability"):this.type = set(inputCol,value)
+  }
 
   def copy(extra: ParamMap): UpliftTransformer = defaultCopy(extra)
 
   def transform(df: Dataset[_]): DataFrame = {
 
-
-    val predictResponse:(Vector,Vector) => Double = (num1:Vector,num2:Vector) => {
-      if(num1(1)-num2(1)>0)1.0 else 0.0
-    }
-    val predictudf = udf(predictResponse)
+    /*val ss = SparkSession.builder().getOrCreate()
+    import ss.implicits._*/
     // Uplift specific UDFs
     val upliftProbabilityCoder: (Vector, Vector) => Vector = (num1: Vector, num2: Vector) => {
       Vectors.dense(Array(1 - (num1(1) - num2(1)), num1(1) - num2(1)))
@@ -113,16 +107,13 @@ with HasInputCol{
     val rawProbabilityFunc = udf(rawPredictionCoder)
 
     var renamedDataSet = df
-        .withColumn("modelProbability",col("probability"))
-      //.drop("probability")
-        //.withColumn("probability",lit(1.0))
-      /*.withColumnRenamed("probability", "modelProbability")
+      .withColumnRenamed("probability", "modelProbability")
       .withColumnRenamed("prediction", "modelPrediction")
-      .withColumnRenamed("rawPrediction", "modelRawPrediction")*/
+      .withColumnRenamed("rawPrediction", "modelRawPrediction")
 
     // Uplift Treatment
     // Repeat for treatment values
-    /*for (treatmentValue <- 0 to 1) {
+    for (treatmentValue <- 0 to 1) {
       // Prob column name
       val treatmentProbColumn = if (treatmentValue == 0)
         "probabilityTreatmentNegative"
@@ -142,9 +133,9 @@ with HasInputCol{
 
       var intermediateDf2 = getBaseClassifier.transform(intermediateDf1)
 
-      /*if (isDefined(plattScalar)) {
+      if (isDefined(plattScalar)) {
         intermediateDf2 = getPlattScaler.transform(intermediateDf2)
-      }*/
+      }
 
       // Reassigning to original dataset because this is a two round loop
       renamedDataSet = intermediateDf2.withColumnRenamed("probability", treatmentProbColumn)
@@ -155,10 +146,8 @@ with HasInputCol{
       .withColumn("probability",
         upliftProbabilityFunc(col("probabilityTreatmentPositive"),
           col("probabilityTreatmentNegative")))
+      .withColumn("prediction",lit(1.0))
       .withColumn("rawPrediction", rawProbabilityFunc(col("probability")))
-      .withColumn("prediction",predictudf(col("probabilityTreatmentPositive"),
-        col("probabilityTreatmentNegative")))*/
-    renamedDataSet
   }
 
   override def transformSchema(schema: StructType): StructType = {
@@ -166,8 +155,8 @@ with HasInputCol{
     // Add the return field
     schema
       .add(StructField("modelProbability", new VectorUDT, false))
-      //.add(StructField("modelRawPrediction", new VectorUDT, false))
-      //.add(StructField("modelPrediction", DoubleType, false))
+      .add(StructField("modelRawPrediction", new VectorUDT, false))
+      .add(StructField("modelPrediction", DoubleType, false))
   }
 
   override def write: MLWriter = new UpliftTransformer.UpliftTransformerWriter(this)
@@ -197,10 +186,10 @@ object UpliftTransformer extends MLReadable[UpliftTransformer] {
       val baseClassifierPath = new Path(path, s"baseClassifier").toString
       instance.getBaseClassifier.asInstanceOf[MLWritable].save(baseClassifierPath)
 
-      /*if(instance.extractParamMap.contains(instance.plattScalar)) {
+      if(instance.extractParamMap.contains(instance.plattScalar)) {
         val plattScalarPath = new Path(path, s"plattScalar").toString
         instance.getPlattScaler.save(plattScalarPath)
-      }*/
+      }
     }
   }
 
@@ -220,18 +209,17 @@ object UpliftTransformer extends MLReadable[UpliftTransformer] {
       val hadoopConf = sc.hadoopConfiguration
       val fs = plattScalarPath.getFileSystem(hadoopConf)
       val qualifiedOutputPath = plattScalarPath.makeQualified(fs.getUri, fs.getWorkingDirectory)
-      /*val plattScalar: Option[PlattScalarModel] = if (fs.exists(qualifiedOutputPath))
-        Some(DefaultParamsReader.loadParamsInstance[PlattScalarModel](plattScalarPath.toString, sc)) else None*/
+      val plattScalar: Option[PlattScalarModel] = if (fs.exists(qualifiedOutputPath))
+        Some(DefaultParamsReader.loadParamsInstance[PlattScalarModel](plattScalarPath.toString, sc)) else None
 
 
       val upliftTransformer = new UpliftTransformer(metadata.uid)
       metadata.getAndSetParams(upliftTransformer)
 
-      /*plattScalar match {
+      plattScalar match {
         case Some(ps) => upliftTransformer.setBaseClassifier(baseClassifer).setPlattScalar(ps)
         case None => upliftTransformer.setBaseClassifier(baseClassifer)
-      }*/
-      upliftTransformer.setBaseClassifier(baseClassifer)
+      }
     }
   }
 }

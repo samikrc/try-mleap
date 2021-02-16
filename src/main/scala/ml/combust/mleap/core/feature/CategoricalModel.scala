@@ -15,7 +15,7 @@ import scala.collection.mutable
   * to get all desired features into one vector before training
   * a model.
   */
-case class CatModel(inputShapes: Seq[DataShape]) extends Model {
+case class CategoricalModel(inputShapes: Seq[DataShape]) extends Model {
 
   val outputSize: Int = inputShapes.map {
     case ScalarShape(_) => 1

@@ -50,7 +50,10 @@ class ImputerCustom (override val uid: String)
 
   def setInputCols(value: Array[String]): this.type = set(inputCols, value)
 
-  def setInputCol(value: String):this.type = set(inputCol,value)
+  def setInputCol(value: String):this.type = {
+    set(inputCol, value)
+    setDefault(outputCol,s"imputerCol_$getInputCol")
+  }
 
   def setReplacementValue(value: String):this.type = set(replaceValue,value)
 
